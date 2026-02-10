@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Port Richmond Payroll</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--black:#1a1a1a;--dark:#333;--mid:#777;--light:#b0b0b0;--faint:#d8d8d8;--hairline:#e6e6e6;--wash:#f4f4f2;--white:#fafaf8;--paper:#fff;--accent:#c43e1c;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif}
+  body{font-family:var(--sans);background:var(--wash);color:var(--black);min-height:100vh;-webkit-font-smoothing:antialiased;font-size:13px;line-height:1.4}
+  ::selection{background:var(--black);color:var(--white)}
+  input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+  input[type="number"]{-moz-appearance:textfield}
+  .topbar{background:var(--black);height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:100}
+  .topbar-left{display:flex;align-items:center;gap:16px}
+  .topbar-mark{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+  .topbar-title{color:#fff;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase}
+  .topbar-district{color:#666;font-size:10px;font-family:var(--mono);letter-spacing:.05em}
+  .topbar-right{display:flex;align-items:center;gap:10px}
+  .topbar-label{font-size:10px;color:#666;letter-spacing:.04em}
+  .topbar-date{background:transparent;border:1px solid #444;border-radius:2px;color:#ccc;padding:3px 8px;font-size:11px;font-family:var(--mono);cursor:pointer;outline:none}
+  .topbar-date:focus{border-color:#888}
+  .layout{display:flex;min-height:calc(100vh - 40px)}
+  .sidebar{width:200px;min-width:200px;background:var(--paper);border-right:1px solid var(--hairline);display:flex;flex-direction:column}
+  .sidebar-nav{padding:16px 12px 12px}
+  .nav-btn{width:100%;display:block;padding:6px 8px;border:none;border-radius:0;background:transparent;color:var(--mid);font-size:11px;font-weight:400;cursor:pointer;font-family:var(--sans);text-align:left;letter-spacing:.02em;transition:color .1s;margin-bottom:1px;border-left:2px solid transparent}
+  .nav-btn:hover{color:var(--black)}
+  .nav-btn.active{color:var(--black);font-weight:600;border-left-color:var(--accent);padding-left:6px}
+  .emp-list{flex:1;padding:8px 12px;overflow-y:auto;border-top:1px solid var(--hairline)}
+  .emp-list-label{font-size:9px;font-weight:500;color:var(--light);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;padding:0 8px}
+  .emp-btn{width:100%;display:flex;align-items:center;gap:10px;padding:7px 8px;border:none;background:transparent;cursor:pointer;text-align:left;transition:background .1s}
+  .emp-btn:hover{background:var(--wash)}
+  .emp-btn.active{background:var(--wash)}
+  .emp-idx{width:20px;font-size:10px;font-family:var(--mono);color:var(--light);text-align:right;flex-shrink:0}
+  .emp-btn.active .emp-idx{color:var(--accent);font-weight:600}
+  .emp-info{flex:1;min-width:0}
+  .emp-name-text{font-size:12px;font-weight:400;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .emp-btn.active .emp-name-text{font-weight:600;color:var(--black)}
+  .emp-hrs{font-size:10px;color:var(--light);font-family:var(--mono)}
+  .emp-btn.active .emp-hrs{color:var(--mid)}
+  .main{flex:1;padding:24px 28px;overflow-x:auto}
+  .emp-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--black)}
+  .emp-header-left{display:flex;align-items:baseline;gap:16px}
+  .emp-header-name{font-size:20px;font-weight:300;color:var(--black);letter-spacing:-.01em}
+  .emp-header-meta{font-size:11px;color:var(--mid);font-family:var(--mono)}
+  .emp-header-total{text-align:right;display:flex;align-items:baseline;gap:6px}
+  .emp-total-num{font-size:24px;font-weight:300;color:var(--black);font-family:var(--mono);letter-spacing:-.02em}
+  .emp-total-unit{font-size:11px;color:var(--mid);font-weight:400}
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse}
+  .cat-row th{padding:0 0 4px;font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--mid);text-align:center;border-bottom:1px solid var(--hairline);height:24px;vertical-align:bottom}
+  .col-row th{padding:4px 0;font-size:10px;font-weight:600;font-family:var(--mono);text-align:center;color:var(--dark);border-bottom:1px solid var(--hairline);letter-spacing:.02em}
+  .sub-row th{padding:3px 0;font-size:9px;font-weight:400;text-align:center;color:var(--light);border-bottom:2px solid var(--black);letter-spacing:.04em;font-family:var(--mono)}
+  .sub-row .th-date{text-align:left;padding-left:0}
+  .sub-row .th-day{width:32px}
+  .code-dropdown{position:relative}
+  .code-dropdown-btn{width:100%;height:22px;border:none;border-bottom:1px solid var(--faint);background:transparent;color:var(--light);font-size:9px;font-family:var(--mono);cursor:pointer;text-align:center;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:all .1s;letter-spacing:.02em}
+  .code-dropdown-btn.has-value{color:var(--dark);font-weight:500}
+  .code-dropdown-btn:hover{border-bottom-color:var(--dark)}
+  .code-dropdown-panel{position:absolute;top:26px;left:50%;transform:translateX(-50%);z-index:1000;width:260px;background:var(--paper);border:1px solid var(--faint);box-shadow:0 8px 32px rgba(0,0,0,.08);display:none}
+  .code-dropdown-panel.open{display:block}
+  .code-search-wrap{padding:6px;border-bottom:1px solid var(--hairline)}
+  .code-search{width:100%;border:1px solid var(--hairline);padding:5px 8px;font-size:11px;outline:none;font-family:var(--sans);background:var(--wash)}
+  .code-search:focus{border-color:var(--dark)}
+  .code-list{max-height:200px;overflow-y:auto}
+  .code-item{padding:5px 8px;font-size:10px;cursor:pointer;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--hairline)}
+  .code-item:hover{background:var(--wash)}
+  .code-item-code{font-family:var(--mono);font-weight:600;font-size:9px;color:var(--accent);min-width:40px}
+  .code-item-desc{color:var(--dark)}
+  .code-clear{color:var(--light);padding:5px 8px;font-size:10px;cursor:pointer;border-bottom:1px solid var(--hairline)}
+  .code-clear:hover{background:var(--wash);color:var(--dark)}
+  .data-row{border-bottom:1px solid var(--hairline)}
+  .data-row:hover{background:rgba(0,0,0,.015)}
+  .data-row.weekend{opacity:.35}
+  .data-row .c-date{padding:0;font-family:var(--mono);font-size:11px;color:var(--dark);font-weight:400;white-space:nowrap;height:32px;vertical-align:middle}
+  .data-row .c-day{padding:0 4px;text-align:center;font-size:10px;color:var(--light);font-family:var(--mono);vertical-align:middle}
+  .data-row .c-input{padding:0 1px;vertical-align:middle}
+  .cell-input{width:100%;height:32px;border:none;background:transparent;text-align:center;font-size:12px;font-family:var(--mono);font-weight:400;color:var(--light);outline:none;transition:all .1s;padding:0;border-bottom:1px solid transparent}
+  .cell-input::placeholder{color:var(--faint)}
+  .cell-input:focus{background:rgba(0,0,0,.02);border-bottom:1px solid var(--black);color:var(--black)}
+  .cell-input.has-value{font-weight:500;color:var(--black)}
+  .data-row .c-total{padding:0 6px;text-align:center;font-family:var(--mono);font-size:12px;vertical-align:middle}
+  .c-total.has-val{font-weight:600;color:var(--black)}
+  .c-total.no-val{color:var(--faint)}
+  .totals-row{border-top:2px solid var(--black)}
+  .totals-row td{padding:8px 0;text-align:center;font-family:var(--mono);font-weight:500;font-size:12px;color:var(--dark)}
+  .totals-row .t-label{text-align:left;font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mid)}
+  .totals-row .t-no-val{color:var(--faint)}
+  .totals-row .t-grand{font-weight:600;color:var(--black);font-size:13px}
+  .page-title{font-size:20px;font-weight:300;color:var(--black);margin-bottom:4px;letter-spacing:-.01em}
+  .page-desc{font-size:12px;color:var(--mid);margin-bottom:20px}
+  .search-input{width:100%;border:none;border-bottom:1px solid var(--faint);padding:8px 0;font-size:13px;margin-bottom:24px;outline:none;font-family:var(--sans);background:transparent;color:var(--black)}
+  .search-input::placeholder{color:var(--light)}
+  .search-input:focus{border-bottom-color:var(--black)}
+  .codes-cat-label{font-size:9px;font-weight:500;color:var(--light);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;margin-top:20px}
+  .codes-cat-label:first-of-type{margin-top:0}
+  .code-ref-item{display:flex;align-items:center;gap:12px;padding:5px 0;border-bottom:1px solid var(--hairline)}
+  .code-ref-badge{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--accent);min-width:48px}
+  .code-ref-desc{font-size:12px;color:var(--dark)}
+  .settings-card{padding:16px 0;border-bottom:1px solid var(--hairline)}
+  .settings-label{display:block;font-size:9px;font-weight:500;color:var(--light);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+  .settings-input{border:none;border-bottom:1px solid var(--faint);padding:6px 0;font-size:14px;font-family:var(--mono);background:transparent;outline:none;color:var(--black);width:200px}
+  .settings-input:focus{border-bottom-color:var(--black)}
+  .settings-hint{font-size:11px;color:var(--light);margin-top:4px}
+  .settings-static{font-size:14px;font-family:var(--mono);color:var(--dark);padding:6px 0}
+  .settings-instructions{font-size:12px;color:var(--mid);line-height:1.8}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-mark"></div>
+    <span class="topbar-title">Port Richmond Payroll</span>
+    <span class="topbar-district">Dist. 31</span>
+  </div>
+  <div class="topbar-right">
+    <span class="topbar-label">Period ending</span>
+    <input type="date" class="topbar-date" id="payPeriodEnd" value="2026-01-27">
+  </div>
+</div>
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-nav">
+      <button class="nav-btn active" data-view="timesheet">Timesheets</button>
+      <button class="nav-btn" data-view="codes">Codes Reference</button>
+      <button class="nav-btn" data-view="settings">Settings</button>
+    </div>
+    <div class="emp-list" id="empList"></div>
+  </div>
+  <div class="main" id="mainContent"></div>
+</div>
+<script>
+const CODES=[
+  {c:"I2JI3",d:"Overtime Lunch – SLH"},{c:"I2JI4",d:"Overtime Lunch – Sr. SLH"},{c:"I2JI5",d:"Special Event – SLH"},
+  {c:"I2JI6",d:"Special Event – Sr. SLH"},{c:"I2JI7",d:"Weekend OT – SLH"},{c:"I2JI8",d:"Weekend OT – Sr. SLH"},
+  {c:"I2JI9",d:"Holiday OT – SLH"},{c:"I2JIA",d:"Holiday OT – Sr. SLH"},{c:"I2JIB",d:"Snack – SLH"},
+  {c:"I2JIC",d:"Snack – Sr. SLH"},{c:"I2JID",d:"Supper – SLH"},{c:"I2JIE",d:"Supper – Sr. SLH"},
+  {c:"I2JIF",d:"School Aide Breakfast Hrs"},{c:"I2JIG",d:"BIC – SLH"},{c:"I2JIH",d:"BIC – Sr. SLH"},
+  {c:"600FL",d:"Family Leave All"},{c:"60A00",d:"Court Subpoena"},{c:"60B00",d:"Death in Family"},
+  {c:"60B0T",d:"Death in Family Travel"},{c:"60B10",d:"Funeral Relative"},{c:"60B20",d:"Funeral Coworker"},
+  {c:"60C00",d:"Graduation"},{c:"60C0T",d:"Graduation / Travel"},
+  {c:"61A00",d:"Self Treated Lunch"},{c:"61AAF",d:"Self Treated Afterschool"},{c:"61ABR",d:"Self Treated Breakfast"},
+  {c:"61B00",d:"Medical Lunch"},{c:"61B0F",d:"Family Leave Lunch"},{c:"61BAF",d:"Medical Afterschool"},
+  {c:"61BAT",d:"Family Leave Afterschool"},{c:"61BBF",d:"Family Leave Breakfast"},{c:"61BBR",d:"Medical Breakfast"},
+  {c:"61BWC",d:"Workers Comp Med Cert"},{c:"61HFL",d:"Holiday Float 4 Days"},
+  {c:"62RAF",d:"Religious Afterschool"},{c:"62RBR",d:"Religious Breakfast"},{c:"62RLG",d:"Religious Lunch"},
+  {c:"63A00",d:"Personal Day Lunch"},{c:"63AAF",d:"Personal Day Afterschool"},{c:"63ABR",d:"Personal Day Breakfast"},
+  {c:"63ECS",d:"Cancer Screening"},{c:"64A00",d:"Jury Duty"},
+  {c:"66B00",d:"Workers Comp Injury"},{c:"66BH0",d:"Workers Comp Hearing"},
+  {c:"67A00",d:"Lateness"},{c:"68A00",d:"Transit Delay"}
+];
+const SC=[{k:"pyreg",l:"PYREG"},{k:"pybrk",l:"PYBRK"},{k:"pyaft",l:"PYAFT"}];
+const BC=[{k:"bulk1",l:"—"},{k:"bulk2",l:"—"},{k:"bulk3",l:"—"},{k:"bulk4",l:"—"}];
+const AC=[...SC,...BC];
+const emps=[
+  {id:1,f:"Lahene",l:"Edwards",eis:"2245250"},{id:2,f:"Servette",l:"Liharevic",eis:"2715560"},
+  {id:3,f:"Seham",l:"Said",eis:"2712067"},{id:4,f:"Akil",l:"Ibtissam",eis:"2730676"},
+  {id:5,f:"Angelina",l:"Obermeyer",eis:"2723767"},{id:6,f:"Nancy",l:"Wesa",eis:"2744757"},
+  {id:7,f:"Carlo",l:"Fleming",eis:"TBD"}
+];
+let S={payEnd:"2026-01-27",sel:0,view:"timesheet",data:{},bc:{}};
+["2026-01-14","2026-01-15","2026-01-16","2026-01-19","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-26","2026-01-27"].forEach(k=>{S.data[`1_${k}_pyreg_hrs`]=7});
+
+function ds(e){const end=new Date(e+"T12:00:00"),r=[];for(let i=13;i>=0;i--){const d=new Date(end);d.setDate(d.getDate()-i);r.push(d)}return r}
+function fmt(d){return`${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")}/${d.getFullYear()}`}
+function dn(d){return d.toLocaleDateString("en-US",{weekday:"short"})}
+function dk(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function gv(eid,k,col,f){return S.data[`${eid}_${k}_${col}_${f}`]||0}
+function sv(eid,k,col,f,v){const key=`${eid}_${k}_${col}_${f}`;if(!v||isNaN(v))delete S.data[key];else S.data[key]=v;render()}
+function etot(emp){const d=ds(S.payEnd);let h=0,m=0;d.forEach(x=>{const k=dk(x);AC.forEach(c=>{h+=gv(emp.id,k,c.k,"hrs");m+=gv(emp.id,k,c.k,"min")})});return{h:h+Math.floor(m/60),m:m%60}}
+function ccat(code){if(code.startsWith("I2J"))return"Overtime / Special";if(code.startsWith("60"))return"Leave & Events";if(code.startsWith("61"))return"Medical";if(code.startsWith("62"))return"Religious";if(code.startsWith("63"))return"Personal";return"Administrative"}
+
+function render(){
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.view===S.view));
+  document.getElementById("empList").style.display=S.view==="timesheet"?"block":"none";
+  document.getElementById("payPeriodEnd").value=S.payEnd;
+  // Emp list
+  const el=document.getElementById("empList");
+  let h=`<div class="emp-list-label">Employees</div>`;
+  emps.forEach((e,i)=>{const t=etot(e);h+=`<button class="emp-btn ${S.sel===i?'active':''}" data-idx="${i}"><span class="emp-idx">${String(i+1).padStart(2,"0")}</span><div class="emp-info"><div class="emp-name-text">${e.l}, ${e.f}</div><div class="emp-hrs">${t.h>0?t.h+'h'+(t.m>0?' '+t.m+'m':''):'—'}</div></div></button>`});
+  el.innerHTML=h;
+  // Main
+  const mc=document.getElementById("mainContent");
+  if(S.view==="timesheet")mc.innerHTML=rTS();
+  else if(S.view==="codes")mc.innerHTML=rCodes();
+  else mc.innerHTML=rSettings();
+  bindEvents();
+}
+
+function rTS(){
+  const emp=emps[S.sel],d=ds(S.payEnd),t=etot(emp);
+  const tStr=t.h+(t.m>0?':'+String(t.m).padStart(2,'0'):'');
+  let h=`<div class="emp-header"><div class="emp-header-left"><span class="emp-header-name">${emp.f} ${emp.l}</span><span class="emp-header-meta">EIS ${emp.eis} · Dist. 31</span></div><div class="emp-header-total"><span class="emp-total-num">${tStr}</span><span class="emp-total-unit">hours</span></div></div><div class="table-wrap"><table>`;
+  h+=`<tr class="cat-row"><th colspan="2"></th><th colspan="${SC.length*2}">Scheduled</th><th colspan="${BC.length*2}">Unscheduled / Bulk</th><th colspan="2"></th></tr>`;
+  h+=`<tr class="col-row"><th colspan="2"></th>`;
+  SC.forEach(c=>{h+=`<th colspan="2">${c.l}</th>`});
+  BC.forEach((c,i)=>{const val=S.bc[`${emp.id}_${i}`]||"";h+=`<th colspan="2" style="padding:2px 4px"><div class="code-dropdown" data-emp="${emp.id}" data-bidx="${i}"><button class="code-dropdown-btn ${val?'has-value':''}">${val||'Code'}</button><div class="code-dropdown-panel" id="cdp_${emp.id}_${i}"><div class="code-search-wrap"><input class="code-search" placeholder="Search…" data-emp="${emp.id}" data-bidx="${i}"></div><div class="code-list" id="cdl_${emp.id}_${i}"></div></div></div></th>`});
+  h+=`<th colspan="2">Total</th></tr>`;
+  h+=`<tr class="sub-row"><th class="th-date">Date</th><th class="th-day">Day</th>`;
+  AC.forEach(()=>{h+=`<th>H</th><th>M</th>`});
+  h+=`<th>H</th><th>M</th></tr>`;
+  d.forEach((x,idx)=>{
+    const k=dk(x),day=dn(x),wk=x.getDay()===0||x.getDay()===6;
+    let rh=0,rm=0;AC.forEach(c=>{rh+=gv(emp.id,k,c.k,"hrs");rm+=gv(emp.id,k,c.k,"min")});
+    const nh=rh+Math.floor(rm/60),nm=rm%60;
+    h+=`<tr class="data-row ${wk?'weekend':''}"><td class="c-date">${fmt(x)}</td><td class="c-day">${day}</td>`;
+    AC.forEach(c=>{
+      const hv=gv(emp.id,k,c.k,"hrs"),mv=gv(emp.id,k,c.k,"min");
+      h+=`<td class="c-input"><input class="cell-input ${hv?'has-value':''}" type="number" min="0" max="24" placeholder="·" value="${hv||''}" data-emp="${emp.id}" data-dk="${k}" data-col="${c.k}" data-field="hrs"></td>`;
+      h+=`<td class="c-input"><input class="cell-input ${mv?'has-value':''}" type="number" min="0" max="59" placeholder="·" value="${mv||''}" data-emp="${emp.id}" data-dk="${k}" data-col="${c.k}" data-field="min"></td>`});
+    h+=`<td class="c-total ${nh?'has-val':'no-val'}">${nh||'·'}</td><td class="c-total ${nm?'has-val':'no-val'}">${nm||'·'}</td></tr>`});
+  h+=`<tr class="totals-row"><td class="t-label" colspan="2">Totals</td>`;
+  AC.forEach(c=>{let ch=0,cm=0;d.forEach(x=>{ch+=gv(emp.id,dk(x),c.k,"hrs");cm+=gv(emp.id,dk(x),c.k,"min")});h+=`<td>${ch||'·'}</td><td class="${cm?'':'t-no-val'}">${cm||'·'}</td>`});
+  h+=`<td class="t-grand">${t.h}</td><td class="${t.m?'t-grand':'t-no-val'}">${t.m||'·'}</td></tr></table></div>`;
+  return h;
+}
+
+function rCodes(){
+  const cats={};CODES.forEach(c=>{const cat=ccat(c.c);if(!cats[cat])cats[cat]=[];cats[cat].push(c)});
+  let h=`<div style="max-width:540px"><div class="page-title">Codes Reference</div><div class="page-desc">Payroll codes for bulk entry, overtime, leave, and administrative use.</div><input class="search-input" id="codeSearchInput" type="text" placeholder="Search…">`;
+  Object.entries(cats).forEach(([cat,codes])=>{h+=`<div class="codes-cat-label" data-cat="${cat}">${cat}</div>`;codes.forEach(c=>{h+=`<div class="code-ref-item" data-code="${c.c}" data-desc="${c.d}"><span class="code-ref-badge">${c.c}</span><span class="code-ref-desc">${c.d}</span></div>`})});
+  return h+`</div>`;
+}
+
+function rSettings(){
+  return`<div style="max-width:400px"><div class="page-title">Settings</div><div class="page-desc">Pay period and district configuration.</div><div class="settings-card"><label class="settings-label">Pay Period Ending</label><input class="settings-input" type="date" id="settingsPayEnd" value="${S.payEnd}"><div class="settings-hint">All timesheets auto-update with 14 days ending on this date.</div></div><div class="settings-card"><label class="settings-label">District</label><div class="settings-static">31</div></div><div class="settings-card"><label class="settings-label">Instructions</label><div class="settings-instructions">1. Set the pay period ending date.<br>2. Select an employee from the sidebar.<br>3. Enter hours and minutes in the grid.<br>4. Use code dropdowns for bulk/unscheduled entries.<br>5. Totals calculate automatically.</div></div></div>`;
+}
+
+function bindEvents(){
+  document.querySelectorAll(".cell-input").forEach(el=>{el.addEventListener("change",e=>{const d=e.target.dataset;sv(+d.emp,d.dk,d.col,d.field,e.target.value===""?null:parseInt(e.target.value,10))})});
+  document.querySelectorAll(".code-dropdown-btn").forEach(btn=>{btn.addEventListener("click",e=>{const w=e.target.closest(".code-dropdown"),eid=w.dataset.emp,bi=w.dataset.bidx,p=document.getElementById(`cdp_${eid}_${bi}`);document.querySelectorAll(".code-dropdown-panel").forEach(x=>{if(x!==p)x.classList.remove("open")});p.classList.toggle("open");if(p.classList.contains("open")){const si=p.querySelector(".code-search");si.value="";si.focus();fillCL(eid,bi,"")}})});
+  document.querySelectorAll(".code-search").forEach(el=>{el.addEventListener("input",e=>fillCL(e.target.dataset.emp,e.target.dataset.bidx,e.target.value))});
+  const sd=document.getElementById("settingsPayEnd");if(sd)sd.addEventListener("change",e=>{S.payEnd=e.target.value;render()});
+  const cs=document.getElementById("codeSearchInput");
+  if(cs)cs.addEventListener("input",e=>{const q=e.target.value.toLowerCase();document.querySelectorAll(".code-ref-item").forEach(el=>{el.style.display=(el.dataset.code.toLowerCase().includes(q)||el.dataset.desc.toLowerCase().includes(q))?"flex":"none"});document.querySelectorAll(".codes-cat-label").forEach(lbl=>{let nx=lbl.nextElementSibling,any=false;while(nx&&!nx.classList.contains("codes-cat-label")){if(nx.style.display!=="none")any=true;nx=nx.nextElementSibling}lbl.style.display=any?"block":"none"})});
+}
+
+function fillCL(eid,bi,search){
+  const el=document.getElementById(`cdl_${eid}_${bi}`),q=search.toLowerCase();
+  const filt=CODES.filter(c=>c.c.toLowerCase().includes(q)||c.d.toLowerCase().includes(q));
+  let h=`<div class="code-clear" data-emp="${eid}" data-bidx="${bi}" data-code="">Clear</div>`;
+  filt.forEach(c=>{h+=`<div class="code-item" data-emp="${eid}" data-bidx="${bi}" data-code="${c.c}"><span class="code-item-code">${c.c}</span><span class="code-item-desc">${c.d}</span></div>`});
+  el.innerHTML=h;
+  el.querySelectorAll(".code-item,.code-clear").forEach(item=>{item.addEventListener("click",e=>{const t=e.target.closest("[data-code]");S.bc[`${t.dataset.emp}_${t.dataset.bidx}`]=t.dataset.code;document.querySelectorAll(".code-dropdown-panel").forEach(p=>p.classList.remove("open"));render()})});
+}
+
+document.addEventListener("click",e=>{if(!e.target.closest(".code-dropdown"))document.querySelectorAll(".code-dropdown-panel").forEach(p=>p.classList.remove("open"))});
+document.querySelectorAll(".nav-btn").forEach(b=>b.addEventListener("click",()=>{S.view=b.dataset.view;render()}));
+document.getElementById("empList").addEventListener("click",e=>{const b=e.target.closest(".emp-btn");if(b){S.sel=+b.dataset.idx;render()}});
+document.getElementById("payPeriodEnd").addEventListener("change",e=>{S.payEnd=e.target.value;render()});
+render();
+</script>
+</body>
+</html>
